@@ -1,26 +1,25 @@
 # Publication of temp-test-pypi-action releases to PyPI
 
+# Note: We want to build for windows, but publication to PyPI
+#       currently runs only on ubuntu, so the two jobs have to
+#       be split and communicate via an artifact.
+
 name: temp-test-pypi-action PYPI
 
 on:
   release:
-    types: [created]
+    types: [published]
 
 jobs:
-  pypi-publish:
-    name: Publish release to PyPI
+  build:
+    name: Build release for Windows
     runs-on: windows-latest
-    environment:
-      name: pypi
-      url: https://test.pypi.org/p/temp-test-pypi-action
-    permissions:
-      id-token: write
     steps:
       - uses: actions/checkout@v4
       - name: Set up Python
         uses: actions/setup-python@v3
         with:
-          python-version: "3.x"
+          python-version: "3.13"
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
@@ -28,7 +27,30 @@ jobs:
       - name: Build package
         run: |
           python -m build
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: python-package-distributions
+          path: dist/
+
+  pypi-publish:
+    name: Publish release to PyPI
+    needs: [build]
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://test.pypi.org/p/temp-test-pypi-action
+    permissions:
+      id-token: write
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: python-package-distributions
+          path: dist/
+
       - name: Publish package distributions to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
-          repository-url: https://test.pypi.org/legacy/ 
+          repository-url: https://test.pypi.org/legacy/
+
