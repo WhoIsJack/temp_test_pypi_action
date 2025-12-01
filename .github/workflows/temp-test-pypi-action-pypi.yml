@@ -1,0 +1,34 @@
+# Publication of temp-test-pypi-action releases to PyPI
+
+name: temp-test-pypi-action PYPI
+
+on:
+  release:
+    types: [created]
+
+jobs:
+  pypi-publish:
+    name: Publish release to PyPI
+    runs-on: windows-latest
+    environment:
+      name: pypi
+      url: https://test.pypi.org/p/temp-test-pypi-action
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v3
+        with:
+          python-version: "3.x"
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install --upgrade build
+      - name: Build package
+        run: |
+          python -m build
+      - name: Publish package distributions to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          repository-url: https://test.pypi.org/legacy/ 
